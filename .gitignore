@@ -1,3 +1,6 @@
 node_modules/
 *.log
 .env
+*.log
+.idea/
+.DS_Store
