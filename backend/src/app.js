@@ -2,7 +2,12 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-require("dotenv").config(); // Loads .env or .env.test depending on environment
+
+// Loads .env or .env.test depending on environment
+//require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
+
+// Debug: confirm that JWT_SECRET is loaded
+console.log("[DEBUG] app.js => process.env.JWT_SECRET:", process.env.JWT_SECRET);
 
 const app = express();
 
@@ -15,7 +20,7 @@ const eventRoutes = require("./routes/events");
 const authRoutes = require("./routes/auth");
 const passportConfig = require("./services/passport-config");
 
-// Only initialise if dummy or real credentials are present
+// Conditionally initialise Google OAuth if credentials are present
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   passportConfig(app);
 }
