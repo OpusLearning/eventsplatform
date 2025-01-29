@@ -3,6 +3,7 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const passport = require("passport");
+const { Sequelize } = require('sequelize');
 const User = require("../models/user");
 const ensureRole = require("../middleware/roleMiddleware");
 const { body, validationResult } = require("express-validator");
@@ -18,6 +19,13 @@ console.log("[DEBUG] auth.js => JWT_SECRET:", JWT_SECRET);
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET must be set in environment variables");
 }
+
+// Health Check Endpoint
+router.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK' });
+});
+
+
 
 // Google OAuth callback route
 router.get(
@@ -61,23 +69,31 @@ router.get(
 router.post(
   "/signup",
   [
+    // Input validation middleware
     body("name").notEmpty().withMessage("Name is required"),
     body("email").isEmail().withMessage("Invalid email address"),
     body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
+    body("role").optional().isIn(["user", "admin"]).withMessage("Invalid role"),
   ],
   async (req, res) => {
+    // Handle validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
+    // Destructure request body
     const { name, email, password, role } = req.body;
 
     try {
+      // Hash the password
       const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Determine user role
       const allowedRoles = ["user", "admin"];
       const userRole = allowedRoles.includes(role) ? role : "user";
 
+      // Create new user
       const user = await User.create({
         name,
         email,
@@ -85,9 +101,27 @@ router.post(
         role: userRole,
       });
 
-      res.status(201).json({ message: "User registered successfully", user });
+      // Respond with success message and user data (excluding password)
+      const { password: _, ...userData } = user.toJSON(); // Exclude password from response
+      res.status(201).json({ message: "User registered successfully", user: userData });
     } catch (error) {
       console.error("Signup error:", error);
+
+      // Handle Sequelize Unique Constraint Error for duplicate emails
+      if (error instanceof Sequelize.UniqueConstraintError) {
+        return res.status(409).json({ error: "Email already in use" });
+      }
+
+      // Handle other potential Sequelize Validation Errors
+      if (error instanceof Sequelize.ValidationError) {
+        const validationErrors = error.errors.map((err) => ({
+          field: err.path,
+          message: err.message,
+        }));
+        return res.status(400).json({ errors: validationErrors });
+      }
+
+      // Fallback to generic server error
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

@@ -39,9 +39,12 @@ const syncDatabase = async () => {
     }
   } catch (error) {
     console.error("Error syncing database:", error);
+    throw error; // Rethrow the error to handle it in app.js
   }
 };
 
-syncDatabase();
+// Remove the internal call to syncDatabase
+// syncDatabase();
 
-module.exports = { sequelize, Event, User, SignUp, Role }; // Export Role model
+// Export all necessary modules and functions
+module.exports = { sequelize, Event, User, SignUp, Role, syncDatabase }; // Export syncDatabase

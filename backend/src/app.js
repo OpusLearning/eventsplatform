@@ -1,29 +1,31 @@
-// src/app.js
-const express = require("express");
-const bodyParser = require("body-parser");
-const cors = require("cors");
+// backend/src/app.js
 
-// Loads .env or .env.test depending on environment
-//require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
+const express = require("express");
+const cors = require("cors");
+const passportConfig = require("./services/passport-config");
+const { syncDatabase } = require("./models"); // Import syncDatabase
+const app = express();
+
+// Conditionally load environment variables from .env in non-production environments
+if (process.env.NODE_ENV !== "production") {
+  const dotenv = require("dotenv");
+  const path = require("path");
+  dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+}
 
 // Debug: confirm that JWT_SECRET is loaded
 console.log("[DEBUG] app.js => process.env.JWT_SECRET:", process.env.JWT_SECRET);
 
-const app = express();
-
 // Middleware
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json()); // Use built-in middleware instead of bodyParser
+
+// Initialize Passport for JWT and Google OAuth
+passportConfig(app);
 
 // Import routes
 const eventRoutes = require("./routes/events");
 const authRoutes = require("./routes/auth");
-const passportConfig = require("./services/passport-config");
-
-// Conditionally initialise Google OAuth if credentials are present
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-  passportConfig(app);
-}
 
 // Define routes
 app.use("/api/events", eventRoutes);
@@ -46,5 +48,13 @@ module.exports = app;
 // Start the server if not in test mode
 if (process.env.NODE_ENV !== "test") {
   const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  syncDatabase()
+    .then(() => {
+      app.listen(PORT, "0.0.0.0", () => console.log(`Server running on port ${PORT}`));
+    })
+    .catch((error) => {
+      console.error("Failed to sync database:", error);
+      process.exit(1); // Exit the process with failure
+    });
 }
+

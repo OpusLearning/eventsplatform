@@ -6,3 +6,9 @@ node_modules/
 .DS_Store
 .env
 .env.test
+# Virtual Environment
+venv/
+
+# Sensitive Files
+backend/.env.test
+ecosystem.config.js

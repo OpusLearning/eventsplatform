@@ -1,16 +1,24 @@
-module.exports = (requiredRoles) => {
+const jwt = require("jsonwebtoken");
+
+module.exports = (allowedRoles) => {
   return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: "No token provided" });
     }
 
-    const userRoles = req.user.roles || [];
-    const hasRole = requiredRoles.some((role) => userRoles.includes(role));
+    const token = authHeader.split(" ")[1];
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) {
+        return res.status(403).json({ error: "Invalid token" });
+      }
 
-    if (!hasRole) {
-      return res.status(403).json({ error: "Forbidden: Insufficient role" });
-    }
+      if (!decoded.role || !allowedRoles.includes(decoded.role)) {
+        return res.status(403).json({ error: "Forbidden: Insufficient permissions" });
+      }
 
-    next();
+      req.user = decoded;
+      next();
+    });
   };
 };
