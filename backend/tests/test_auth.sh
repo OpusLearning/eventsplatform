@@ -1,9 +1,9 @@
 #!/bin/bash
 
 ##############################################################################
-# Debug mode: prints each command as executed
+# Fail safely without echoing credentials or tokens
 ##############################################################################
-set -x
+set -euo pipefail
 
 echo "[DEBUG] Running test_auth.sh from: $(pwd)"
 
@@ -19,7 +19,7 @@ USER_EMAIL="testuser$(date +%s)@example.com"
 USER_PASSWORD="test12345"
 
 # (Optional) JWT_SECRET if needed, not directly used by this script
-JWT_SECRET="REMOVED_ROTATE_REQUIRED"
+JWT_SECRET="${JWT_SECRET:?Set JWT_SECRET to a non-production test value}"
 
 # Will store the JWT token after login
 TOKEN=""
@@ -27,7 +27,6 @@ TOKEN=""
 # Debug logs to confirm values
 echo "[DEBUG] BASE_URL = $BASE_URL"
 echo "[DEBUG] USER_EMAIL = $USER_EMAIL"
-echo "[DEBUG] USER_PASSWORD = $USER_PASSWORD"
 
 ##############################################################################
 # Helper function for "positive" tests (expect 200 or 201)

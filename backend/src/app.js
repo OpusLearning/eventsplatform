@@ -14,7 +14,7 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 // Debug: confirm that JWT_SECRET is loaded
-console.log("[DEBUG] app.js => process.env.JWT_SECRET:", process.env.JWT_SECRET);
+console.log("[DEBUG] Application configuration loaded");
 
 // Middleware
 app.use(cors());
@@ -57,4 +57,3 @@ if (process.env.NODE_ENV !== "test") {
       process.exit(1); // Exit the process with failure
     });
 }
-

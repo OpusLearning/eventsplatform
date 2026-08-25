@@ -1,14 +1,18 @@
 node_modules/
 *.log
 .env
-*.log
+.env.*
+!.env.example
+!.env.test.example
 .idea/
 .DS_Store
-.env
-.env.test
 # Virtual Environment
 venv/
+.venv/
 
 # Sensitive Files
-backend/.env.test
+**/tokens.json
+*.sqlite
+*.sqlite3
+*.db
 ecosystem.config.js
